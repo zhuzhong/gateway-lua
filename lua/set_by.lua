@@ -1,10 +1,20 @@
+
 local math=require "math"
 
-local function s2table(servers)
-	table ts={}
-	--如果servers 不是多个，而是一个 split的行为是什么呢？测试一下
-	local server_arrays=string.split(servers,',')
-	for i=1;#server_arrays do
+--字符串分隔方法
+function string:split(sep)
+		local sep, fields = sep or ":", {}
+		local pattern = string.format("([^%s]+)", sep)
+		self:gsub(pattern, function (c) fields[#fields + 1] = c end)
+		return fields
+end
+
+
+local function s2table(s)
+	local ts = {}
+	ngx.log(ngx.ERR,"s=",s)
+	local server_arrays=s:split(',')
+	for i=1,#server_arrays do
 		local s=server_arrays[i]
 		ts[i]=s
 	end	
@@ -13,18 +23,22 @@ local function s2table(servers)
 		-- body
 					if a<b then 	
 						return true;
-					else a>=b then 
+					elseif a>=b then 
 							return false;
 					end
 			end)
 	return ts
 end
 
+-- 随机算法
 local function rdom_load_balance_server( ts )
 	-- body
-	local t_lenth=table.getn(ts);
-	math.randomseed(t_lenth)
-	local r=math.random(t_lenth)
+	local t_length=table.getn(ts);
+	ngx.log(ngx.ERR,'t_length=',t_length);
+	--设置时间种子
+	math.randomseed(tostring(os.time()):reverse():sub(1, 7)) 
+	local r=math.random(1,t_length)
+	ngx.log(ngx.ERR,'r=',r);
 	return ts[r]
 end
 
@@ -32,6 +46,11 @@ end
 function get_server( context_path )
 	local shared_data=ngx.shared.shared_data
 	local servers=shared_data:get(context_path)
+	if servers ==nil then
+		ngx.log(ngx.ERR,'getnullservers=',servers)
+		--return "http://127.0.0.1:10000"
+		return get_server('local')
+	end
 	ngx.log(ngx.ERR,"server=",servers)
 	local ts=s2table(servers)
 --然后实现随机负载均衡算法,选择其中一个服务端
