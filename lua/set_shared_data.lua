@@ -1,4 +1,3 @@
-
 --[[
 这一段主要改编自https://www.jianshu.com/p/e93247935211
  
@@ -14,9 +13,9 @@
 local cjson=require "cjson.safe"
 local dip = ngx.shared.shared_data
 
-local uri_args = ngx.req.get_uri_args()
-
-if  uri_args["method"] == "add" then
+local uri_args= ngx.req.get_uri_args()
+ngx.log(ngx.ERR,"method=",uri_args["method"])
+if uri_args["method"] == "add" then
 		--[[
 			对于add 方法，它的请求格式为GET 方法请求
 			?method=add&&domain=examples&&rip=10.20.30.40:8080
@@ -39,7 +38,7 @@ if  uri_args["method"] == "add" then
 		end
 		ngx.say("Set successfully : domain"..uri_args["domain"].."|rip"..uri_args["rip"])
 	end
-elseif  uri_args["method"] == "del" then
+elseif uri_args["method"]=="del" then
 	--[[
 	del 方法的请格式为 ?method=del&&domain=user&&rip=10.20.39.45:9090
 	]]
