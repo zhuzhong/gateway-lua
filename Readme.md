@@ -10,24 +10,30 @@
 	
 	[openresty]
 	name=Official OpenResty Repository
+	
 	baseurl=https://openresty.org/yum/openresty/openresty/epel-$releasever-$basearch/
+	
 	skip_if_unavailable=True
+	
 	gpgcheck=1
+	
 	gpgkey=https://copr-be.cloud.fedoraproject.org/results/openresty/openresty/pubkey.gpg
+	
 	enabled=1
+	
 	enabled_metadata=1
 	
 1. sudo yum install openresty
 
 ### 修改nginx.conf
 	
-将nginx.conf进行如下配置，本文档只展示主要的配置。
+nginx.conf进行如下配置(只展示主要的配置)
 	
-1. 在nginx.conf 的http 中增加
+1. 在nginx.conf 的http 中增加如下内容
 		 
 	
-	    # 空间大小根据实际情况进行增加
-		 lua_shared_dict shared_data 1m;
+	    #共享空间大小根据实际情况进行增加
+		 lua_shared_dict shared_data 10m;
   		 init_by_lua_file /data/lua/init_by.lua;
 
 	   	 server {
@@ -54,7 +60,7 @@
 	
 	
 		  server {
-	        listen       10000;
+	        listen       2018;
 		     server_name localhost 127.0.0.1;
 	        location / {
 	            root   html;
@@ -70,7 +76,7 @@
 
 假定dubbo以zookeeper作为服务的注册中心，则获取zookeeper中的方式，目前了解下来有两个方案，一是直接使用zklua在openresty这一端直接获取相应的zookeeper节点中的数据；二是采用中间服务的形式获取zookeeper节点的数据问题，然后再写入shared_data中即可。第二种方案相比第一种方案来说有些啰嗦，但是个人认为第二种方案的可扩展性比较强，对于后面的服务降级限流等都有很大的可操作空间。所以后续以第二种方案进行开发。
 
-## shared_data的管理方法
+##手动管理shared_data的方法
 1. 新增后端服务器
 
 		GET请求
@@ -91,5 +97,7 @@
 						"docs":"10.20.30.40:9089,10.20.30.40:9099"
 						}]
 		}
-	
+
+## 自动管理sharded_data的方法
+	参见
   
