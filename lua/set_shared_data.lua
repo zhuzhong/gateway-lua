@@ -74,7 +74,7 @@ elseif ngx.req.get_method()=='POST' then
 	请求方法为post
 		请求格式为：
 		{
-			"contents":[{"examples":"10.20.30.40:9090",
+			"all":[{"examples":"10.20.30.40:9090",
 						"docs":"10.20.30.40:9089,10.20.30.40:9099"
 						}]
 		}
@@ -86,7 +86,7 @@ elseif ngx.req.get_method()=='POST' then
 		ngx.say('post_args is not json format')
 		return
 	end 
-	local domain_hs=json_contents['contents']
+	local domain_hs=json_contents['all']
 		--这是个数组遍历一下
 	for dm,hos in pairs(domain_hs) do 
 			dip:set(dom,hos)
