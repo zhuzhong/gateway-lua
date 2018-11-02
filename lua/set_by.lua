@@ -15,8 +15,11 @@ local function s2table(s)
 	ngx.log(ngx.ERR,"s=",s)
 	local server_arrays=s:split(',')
 	for i=1,#server_arrays do
+
 		local s=server_arrays[i]
-		ts[i]=s
+		if s~=nil then 
+			ts[i]=s
+		end 
 	end	
 
 	table.sort(ts,function ( a,b )
