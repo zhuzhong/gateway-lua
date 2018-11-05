@@ -45,8 +45,15 @@ nginx.conf进行如下配置(只展示主要的配置)
 	        location / {  	
 				default_type "text/html";
 				set_by_lua_file $back_server /data/lua/set_by.lua;
-				proxy_set_header Host $host;
-				proxy_http_version 1.1;
+
+				proxy_next_upstream off;
+        		proxy_set_header    X-Real-IP           $remote_addr;
+        		proxy_set_header    X-Forwarded-For     $proxy_add_x_forwarded_for;
+        		proxy_set_header    Host                $host;
+        		proxy_http_version  1.1;
+        		proxy_set_header    Connection  "";
+
+
 				proxy_pass $back_server;
 	        }
 	
