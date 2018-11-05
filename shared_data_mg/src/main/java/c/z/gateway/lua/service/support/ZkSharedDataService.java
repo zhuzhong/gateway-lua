@@ -6,8 +6,10 @@ package c.z.gateway.lua.service.support;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import javax.annotation.PostConstruct;
@@ -48,14 +50,15 @@ public class ZkSharedDataService implements SharedDataService {
 		 * "docs":"10.20.30.40:9089,10.20.30.40:9099" }] }
 		 */
 		JSONObject subObject = new JSONObject();
-		for (Map.Entry<String, List<String>> kv : hosts.entrySet()) {
-			SharedData s = new SharedData(kv.getKey(), kv.getValue());
+		for (Map.Entry<String, Set<String>> kv : hosts.entrySet()) {
+			SharedData s = new SharedData(kv.getKey(), filterServers(kv.getKey(),kv.getValue())
+					                     );
 			subObject.put(s.getContextPath(), s.getHostsString());
 		}
 
 		JSONObject jobject = new JSONObject();
 		jobject.put("all", subObject);
-		logger.info("下面使用httpclient将其push 到nginx即可,后面再写...");
+		//logger.info("下面使用httpclient将其push 到nginx即可,后面再写...");
 		String s = jobject.toJSONString();
 		logger.info("push到nginx的内容={}", s);
 		String ret = httpClientService.doPost(config.getPushSharedDataAddress(), s);
@@ -64,6 +67,12 @@ public class ZkSharedDataService implements SharedDataService {
 
 	}
 
+	protected Set<String> filterServers(String contextpath,Set<String> servers) {
+		/**
+		 * 对于限流的服务器，不需要再次上线的，则在此过滤掉
+		 */
+		return servers;
+	}
 	private static class SharedData {
 		private final String contextPath;
 		private final List<String> hosts;
@@ -72,10 +81,10 @@ public class ZkSharedDataService implements SharedDataService {
 		 * @param contextPath
 		 * @param hosts
 		 */
-		public SharedData(String contextPath, List<String> hosts) {
+		public SharedData(String contextPath, Set<String> hosts) {
 			super();
 			this.contextPath = contextPath;
-			this.hosts = hosts;
+			this.hosts = new ArrayList<String>(hosts);
 		}
 
 		public String getContextPath() {
@@ -119,11 +128,11 @@ public class ZkSharedDataService implements SharedDataService {
 		runaway(zkClient, rootPath);
 	}
 
-	private static ConcurrentHashMap<String/* contextPath */, List<String/* host:port */>> hosts = new ConcurrentHashMap<String, List<String>>();
+	private static ConcurrentHashMap<String/* contextPath */, Set<String/* host:port */>> hosts = new ConcurrentHashMap<String, Set<String>>();
 
 	private void runaway(final ZkClient zkClient, final String path) {
 		zkClient.unsubscribeAll();
-		ConcurrentHashMap<String, List<String>> newHosts = new ConcurrentHashMap<String, List<String>>();
+		ConcurrentHashMap<String, Set<String>> newHosts = new ConcurrentHashMap<String, Set<String>>();
 		zkClient.subscribeChildChanges(path, new IZkChildListener() {
 
 			public void handleChildChange(String parentPath, List<String> currentChilds) throws Exception {
@@ -192,9 +201,9 @@ public class ZkSharedDataService implements SharedDataService {
 										ServiceProvider sp = new ServiceProvider(thirdChild);
 										String contextPath = sp.getContextPath();
 										String host = sp.getHost();
-										List<String> hostSets = newHosts.get(contextPath);
+										Set<String> hostSets = newHosts.get(contextPath);
 										if (hostSets == null) {
-											hostSets = new ArrayList<String>();
+											hostSets = new HashSet<String>();
 											newHosts.put(contextPath, hostSets);
 										}
 										hostSets.add(host);
